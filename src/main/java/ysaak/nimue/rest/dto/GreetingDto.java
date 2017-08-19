@@ -1,8 +1,15 @@
 package ysaak.nimue.rest.dto;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.Objects;
+
 public class GreetingDto {
-    private final long id;
-    private final String content;
+    private long id;
+    private String content;
+
+    public GreetingDto() {
+    }
 
     public GreetingDto(long id, String content) {
         this.id = id;
@@ -13,7 +20,37 @@ public class GreetingDto {
         return id;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public String getContent() {
         return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GreetingDto that = (GreetingDto) o;
+        return id == that.id &&
+                Objects.equals(content, that.content);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, content);
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("id", id)
+                .append("content", content)
+                .toString();
     }
 }
