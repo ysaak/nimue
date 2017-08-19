@@ -7,4 +7,6 @@ import ysaak.nimue.core.model.User;
 @Repository
 public interface UserRepository extends CrudRepository<User, Long> {
     User findByLogin(String login);
+
+    User findByEmail(String email);
 }

@@ -3,14 +3,15 @@ package ysaak.nimue.core.service;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ysaak.common.exception.BusinessException;
 import ysaak.common.exception.generic.DataValidationException;
 import ysaak.common.service.AbstractService;
-import ysaak.nimue.core.exception.user.UserErrorCode;
+import ysaak.nimue.core.exception.user.EmailAlreadyUsedException;
+import ysaak.nimue.core.exception.user.LoginAlreadyUsedException;
+import ysaak.nimue.core.exception.user.NoMatchingPasswordException;
 import ysaak.nimue.core.model.User;
 import ysaak.nimue.core.repository.UserRepository;
 
@@ -24,7 +25,7 @@ public class UserService extends AbstractService {
     @Autowired
     private UserRepository userRepository;
 
-    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10, null);
 
     public PasswordEncoder getPasswordEncoder() {
         return passwordEncoder;
@@ -34,9 +35,15 @@ public class UserService extends AbstractService {
         validateData(user);
 
         // Check login already exists
-        User existingUser = findByLogin(user.getLogin());
+        final User existingUser = userRepository.findByLogin(user.getLogin());
         if (existingUser != null && !existingUser.getId().equals(user.getId())) {
-            throw new BusinessException(UserErrorCode.LOGIN_ALREADY_EXISTS, "login already existing");
+            throw new LoginAlreadyUsedException(user.getLogin());
+        }
+
+        // Check email already used
+        final User existingEmail = userRepository.findByEmail(user.getEmail());
+        if (existingEmail != null && !existingEmail.getId().equals(user.getId())) {
+            throw new EmailAlreadyUsedException(user.getEmail());
         }
 
         // Check passwords
@@ -45,15 +52,15 @@ public class UserService extends AbstractService {
         }
 
         if (!StringUtils.equals(user.getPassword(), user.getPasswordConfirmation())) {
-            throw new BusinessException(UserErrorCode.NO_MATCHING_PASSWORD, "Passwords don't match");
+            throw new NoMatchingPasswordException();
         }
     }
 
-    public void create(User user) throws BusinessException {
+    public User create(User user) throws BusinessException {
         beforeSave(user, true);
 
         user.setPasswordDigest(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     public void update(User user) throws BusinessException {
@@ -78,8 +85,7 @@ public class UserService extends AbstractService {
 
     public boolean checkPasswordMatches(User user, String password) {
         // Validate current password
-        String encodedPassword = passwordEncoder.encode(password);
-        return StringUtils.equals(encodedPassword, user.getPasswordDigest());
+        return passwordEncoder.matches(password, user.getPasswordDigest());
     }
 
     public List<User> listAll() {

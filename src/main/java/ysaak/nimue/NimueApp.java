@@ -24,6 +24,7 @@ public class NimueApp implements CommandLineRunner {
         User u = new User();
         u.setActive(true);
         u.setDisplayedName("Test admin user");
+        u.setEmail("test@test.fr");
         u.setLogin("admin");
         u.setPassword("password2");
         u.setPasswordConfirmation("password2");
